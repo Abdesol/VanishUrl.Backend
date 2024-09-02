@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using VanishUrl.Api.Dtos;
+using VanishUrl.Api.Services;
+using VanishUrl.Api.Services.Interfaces;
 
 namespace VanishUrl.Api.Endpoints;
 
@@ -8,14 +11,20 @@ public static class Endpoints
     {
         app.MapGet("/", () => Results.Ok("VanishUrl API"));
 
-        app.MapGet("/{id}", async (string id) =>
+        app.MapGet("/{id}", async (string id, [FromServices] IDataService dataService) =>
         {
-            return Results.Ok($"This is the text: {id}");
+            if (!await dataService.DoesIdExist(id))
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Text(await dataService.GetData(id), "text/plain");
         });
 
-        app.MapPost("/set", async (SetDataRequest setDataRequest) =>
+        app.MapPost("/set", async (SetDataRequest setDataRequest, [FromServices] IDataService dataService) =>
         {
-            return Results.Ok(new SetDataResponse("This is the text"));
+            var id = await dataService.SetData(setDataRequest.Data);
+            return Results.Created($"/{id}", new SetDataResponse(id));
         });
     }
 }
