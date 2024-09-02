@@ -13,12 +13,9 @@ public static class Endpoints
 
         app.MapGet("/{id}", async (string id, [FromServices] IDataService dataService) =>
         {
-            if (!await dataService.DoesIdExist(id))
-            {
-                return Results.NotFound();
-            }
-
-            return Results.Text(await dataService.GetData(id), "text/plain");
+            var data = await dataService.GetData(id);
+            Task.Run(() => dataService.RemoveData(id));
+            return data is null ? Results.NotFound() : Results.Text(data, "text/plain");
         });
 
         app.MapPost("/set", async (SetDataRequest setDataRequest, [FromServices] IDataService dataService) =>
